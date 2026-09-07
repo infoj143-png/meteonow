@@ -36,25 +36,25 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-12 my-4">
+    <div className="space-y-8 my-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-
-      {/* Top Banner Ad Container */}
-      <section className="my-6">
-        <AdContainer type="native" slot="header-banner" label="Publicité Météo" />
-      </section>
 
       {/* Weather Dashboard Component */}
       <section className="my-8">
         <WeatherDashboard />
       </section>
 
-      {/* Middle Banner Ad Container */}
-      <section className="my-10">
-        <AdContainer type="native" slot="inline-content" label="Partenaire Météo" />
+      {/* Adsterra Native Banner in sponsored box below search/weather section */}
+      <section className="my-8">
+        <AdContainer type="native" slot="weather-bottom" label="Publicité Météo" />
+      </section>
+
+      {/* Clean Monetag Banner between weather forecast and FAQ section */}
+      <section className="my-8">
+        <AdContainer type="monetag" slot="inline-monetag" label="Partenaire Météo" />
       </section>
 
       {/* AI Search Optimization & FAQ Section */}
