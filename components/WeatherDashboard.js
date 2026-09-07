@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Sun,
   Cloud,
@@ -17,17 +17,22 @@ import {
   Flame,
   Info,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  Navigation,
+  MapPin,
+  X,
+  Loader2
 } from 'lucide-react';
 
 export const CITIES = [
-  { id: 'paris', name: 'Paris', lat: 48.8566, lon: 2.3522, region: 'Île-de-France' },
-  { id: 'marseille', name: 'Marseille', lat: 43.2965, lon: 5.3698, region: 'Provence-Alpes-Côte d\'Azur' },
-  { id: 'lyon', name: 'Lyon', lat: 45.7640, lon: 4.8357, region: 'Auvergne-Rhône-Alpes' },
-  { id: 'toulouse', name: 'Toulouse', lat: 43.6047, lon: 1.4442, region: 'Occitanie' },
-  { id: 'nice', name: 'Nice', lat: 43.7102, lon: 7.2620, region: 'Provence-Alpes-Côte d\'Azur' },
-  { id: 'nantes', name: 'Nantes', lat: 47.2184, lon: -1.5536, region: 'Pays de la Loire' },
-  { id: 'bordeaux', name: 'Bordeaux', lat: 44.8378, lon: -0.5792, region: 'Nouvelle-Aquitaine' }
+  { id: 'paris', name: 'Paris', lat: 48.8566, lon: 2.3522, region: 'Île-de-France', country: 'France' },
+  { id: 'marseille', name: 'Marseille', lat: 43.2965, lon: 5.3698, region: 'Provence-Alpes-Côte d\'Azur', country: 'France' },
+  { id: 'lyon', name: 'Lyon', lat: 45.7640, lon: 4.8357, region: 'Auvergne-Rhône-Alpes', country: 'France' },
+  { id: 'toulouse', name: 'Toulouse', lat: 43.6047, lon: 1.4442, region: 'Occitanie', country: 'France' },
+  { id: 'nice', name: 'Nice', lat: 43.7102, lon: 7.2620, region: 'Provence-Alpes-Côte d\'Azur', country: 'France' },
+  { id: 'nantes', name: 'Nantes', lat: 47.2184, lon: -1.5536, region: 'Pays de la Loire', country: 'France' },
+  { id: 'bordeaux', name: 'Bordeaux', lat: 44.8378, lon: -0.5792, region: 'Nouvelle-Aquitaine', country: 'France' }
 ];
 
 // Open-Meteo Weather Code Mapping in French
@@ -54,12 +59,23 @@ export default function WeatherDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Interactive Search & Geolocation State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [geoError, setGeoError] = useState(null);
+
+  const searchContainerRef = useRef(null);
+
   const fetchWeather = async (city) => {
     setLoading(true);
     setError(null);
     try {
+      const tz = encodeURIComponent('auto');
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=Europe%2FParis`
+        `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=${tz}`
       );
       if (!response.ok) {
         throw new Error('Erreur lors du chargement des données météo');
@@ -77,29 +93,258 @@ export default function WeatherDashboard() {
     fetchWeather(selectedCity);
   }, [selectedCity]);
 
+  // Handle clicking outside of search dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSearchSubmit = async (e) => {
+    e?.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setSearchError(null);
+    try {
+      const res = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery.trim())}&count=5&language=fr&format=json`
+      );
+      if (!res.ok) {
+        throw new Error('Erreur lors de la recherche de ville');
+      }
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) {
+        setSearchError('Aucune ville trouvée. Vérifiez l\'orthographe.');
+        setSearchResults([]);
+      } else {
+        setSearchResults(data.results);
+      }
+    } catch (err) {
+      setSearchError('Impossible de contacter le service de recherche.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSearchResult = (result) => {
+    const regionName = result.admin1 || result.admin2 || result.country || '';
+    const countryName = result.country || '';
+    const newCity = {
+      id: `custom-${result.id}`,
+      name: result.name,
+      lat: result.latitude,
+      lon: result.longitude,
+      region: countryName ? `${regionName}${regionName && countryName !== regionName ? `, ${countryName}` : ''}` : regionName,
+      country: countryName
+    };
+    setSelectedCity(newCity);
+    setSearchResults([]);
+    setSearchQuery('');
+    setSearchError(null);
+  };
+
+  const handleGeolocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError('La géolocalisation n\'est pas supportée par votre navigateur.');
+      return;
+    }
+
+    setIsLocating(true);
+    setGeoError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        // Try reverse lookup or estimate place name via Open-Meteo Geocoding
+        let detectedName = 'Ma Position';
+        let detectedRegion = 'Position GPS';
+        let detectedCountry = '';
+
+        try {
+          const res = await fetch(
+            `https://geocoding-api.open-meteo.com/v1/search?name=${latitude.toFixed(2)},${longitude.toFixed(2)}&count=1&language=fr&format=json`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+              const place = data.results[0];
+              detectedName = place.name;
+              detectedCountry = place.country || '';
+              detectedRegion = place.admin1 || place.admin2 || place.country || 'Position détectée';
+            }
+          }
+        } catch {
+          // Fallback if reverse geocoding request fails
+        }
+
+        const geoCity = {
+          id: `geo-${Date.now()}`,
+          name: detectedName,
+          lat: latitude,
+          lon: longitude,
+          region: detectedRegion,
+          country: detectedCountry
+        };
+
+        setSelectedCity(geoCity);
+        setIsLocating(false);
+      },
+      (err) => {
+        setIsLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setGeoError('Accès à la géolocalisation refusé. Veuillez autoriser l\'accès dans votre navigateur.');
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setGeoError('Les informations de localisation sont indisponibles.');
+        } else if (err.code === err.TIMEOUT) {
+          setGeoError('La demande de géolocalisation a expiré.');
+        } else {
+          setGeoError('Impossible de détecter votre position.');
+        }
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
   const currentTemp = weatherData?.current?.temperature_2m;
   const isHeatwave = currentTemp !== undefined && currentTemp >= 30;
 
   return (
     <div className="space-y-8">
-      {/* City Selector Tabs */}
-      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 bg-slate-900/90 p-2 rounded-2xl border border-slate-800 shadow-xl">
-        {CITIES.map((city) => {
-          const isActive = city.id === selectedCity.id;
-          return (
+      {/* Search Bar & GPS Auto-Location Header Controls */}
+      <div className="bg-slate-900/90 p-4 md:p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          {/* Search Input Box */}
+          <div className="relative flex-1 w-full" ref={searchContainerRef}>
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (searchError) setSearchError(null);
+                }}
+                placeholder="Rechercher une ville ou un pays (ex: Lyon, Tokyo, Montréal)..."
+                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500/80 rounded-2xl py-3 pl-11 pr-10 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+              <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setSearchError(null);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded-full cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </form>
+
+            {/* Search Suggestions Dropdown */}
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-800/60 max-h-64 overflow-y-auto">
+                {searchResults.map((result) => (
+                  <button
+                    key={result.id}
+                    onClick={() => handleSelectSearchResult(result)}
+                    className="w-full text-left px-4 py-3 hover:bg-slate-900 transition-colors cursor-pointer flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <MapPin className="w-4 h-4 text-orange-400 shrink-0 group-hover:scale-110 transition-transform" />
+                      <div>
+                        <span className="font-semibold text-slate-100 text-sm">{result.name}</span>
+                        <span className="text-xs text-slate-400 ml-2">
+                          {[result.admin1, result.country].filter(Boolean).join(', ')}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">
+                      {result.latitude.toFixed(2)}°, {result.longitude.toFixed(2)}°
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Search Button */}
+          <button
+            onClick={handleSearchSubmit}
+            disabled={isSearching || !searchQuery.trim()}
+            className="w-full sm:w-auto px-5 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold text-sm rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 shrink-0"
+          >
+            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            <span>Rechercher</span>
+          </button>
+
+          {/* GPS Auto-Location Button */}
+          <button
+            onClick={handleGeolocation}
+            disabled={isLocating}
+            title="Détecter ma position GPS"
+            className="w-full sm:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 font-semibold text-sm rounded-2xl border border-slate-700 transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 shadow-md"
+          >
+            {isLocating ? (
+              <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
+            ) : (
+              <Navigation className="w-4 h-4 text-orange-400" />
+            )}
+            <span>Ma Position GPS</span>
+          </button>
+        </div>
+
+        {/* Error Feedback Messages for Search & GPS */}
+        {(searchError || geoError) && (
+          <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 border border-red-800/50 p-3 rounded-xl">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{searchError || geoError}</span>
             <button
-              key={city.id}
-              onClick={() => setSelectedCity(city)}
-              className={`px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-                isActive
-                  ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20 font-semibold scale-[1.02]'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
-              }`}
+              onClick={() => {
+                setSearchError(null);
+                setGeoError(null);
+              }}
+              className="ml-auto text-red-400 hover:text-red-200"
             >
-              <span>{city.name}</span>
+              <X className="w-3.5 h-3.5" />
             </button>
-          );
-        })}
+          </div>
+        )}
+
+        {/* Quick Select Preset City Tabs */}
+        <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+          <span className="text-xs text-slate-400 font-medium mr-1 flex items-center gap-1">
+            Villes rapides :
+          </span>
+          {CITIES.map((city) => {
+            const isActive = city.id === selectedCity.id;
+            return (
+              <button
+                key={city.id}
+                onClick={() => {
+                  setSelectedCity(city);
+                  setSearchError(null);
+                  setGeoError(null);
+                }}
+                className={`px-3.5 py-1.5 rounded-xl font-medium text-xs transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 font-semibold'
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 bg-slate-950/50 border border-slate-800'
+                }`}
+              >
+                <span>{city.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Loading state */}
@@ -117,7 +362,7 @@ export default function WeatherDashboard() {
           <p className="text-red-300 font-medium">{error}</p>
           <button
             onClick={() => fetchWeather(selectedCity)}
-            className="px-4 py-2 bg-red-800/80 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 bg-red-800/80 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2 cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" /> Réessayer
           </button>
@@ -166,8 +411,12 @@ export default function WeatherDashboard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                  <span className="font-semibold text-orange-400">{selectedCity.region}</span>
-                  <span>•</span>
+                  {selectedCity.region && (
+                    <>
+                      <span className="font-semibold text-orange-400">{selectedCity.region}</span>
+                      <span>•</span>
+                    </>
+                  )}
                   <span>Mise à jour en direct</span>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
@@ -232,7 +481,7 @@ export default function WeatherDashboard() {
                 <div>
                   <p className="text-xs text-slate-400">Indice UV Max</p>
                   <p className="text-base font-bold text-white">
-                    {weatherData.daily?.uv_index_max?.[0] ? Math.round(weatherData.daily.uv_index_max[0]) : 'N/A'}
+                    {weatherData.daily?.uv_index_max?.[0] !== undefined && weatherData.daily?.uv_index_max?.[0] !== null ? Math.round(weatherData.daily.uv_index_max[0]) : 'N/A'}
                   </p>
                 </div>
               </div>
