@@ -58,13 +58,15 @@ export default function AdContainer({
   }, [type]);
 
   if (type === 'social') {
-    return <div ref={containerRef} className="adsterra-social-container" />;
+    return <div ref={containerRef} className="adsterra-social-container my-4" />;
   }
 
+  const containerId = `container-b0ddaac518c2ff5004e1dd95bdc9c260-${slot}`;
+
   return (
-    <div className="my-6 w-full flex flex-col items-center justify-center">
-      <div className="w-full max-w-4xl bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 text-center relative overflow-hidden group">
-        <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest mb-2 px-1">
+    <div className="my-8 w-full flex flex-col items-center justify-center">
+      <div className="w-full max-w-4xl bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 md:p-6 text-center relative overflow-hidden group shadow-lg">
+        <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest mb-3 px-1">
           <span>Espace Sponsorisé</span>
           <span>{label}</span>
         </div>
@@ -72,9 +74,9 @@ export default function AdContainer({
         {/* Adsterra Native Banner Container */}
         <div
           ref={containerRef}
-          className="min-h-[90px] sm:min-h-[120px] rounded-xl bg-slate-950/80 border border-dashed border-slate-800 flex flex-col items-center justify-center p-4 transition-colors group-hover:border-slate-700"
+          className="min-h-[100px] sm:min-h-[130px] rounded-xl bg-slate-950/80 border border-dashed border-slate-800 flex flex-col items-center justify-center p-4 transition-colors group-hover:border-slate-700"
         >
-          <div id="container-b0ddaac518c2ff5004e1dd95bdc9c260" className="w-full h-full flex justify-center items-center">
+          <div id={containerId} className="w-full h-full flex justify-center items-center">
             <span className="text-xs font-semibold text-slate-400 mb-1">
               MeteoNow Native Ads — {slot.toUpperCase()}
             </span>
