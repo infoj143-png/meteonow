@@ -36,23 +36,29 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12 my-4">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
       {/* Top Banner Ad Container */}
-      <AdContainer type="native" slot="header-banner" label="Publicité Météo" />
+      <section className="my-6">
+        <AdContainer type="native" slot="header-banner" label="Publicité Météo" />
+      </section>
 
       {/* Weather Dashboard Component */}
-      <WeatherDashboard />
+      <section className="my-8">
+        <WeatherDashboard />
+      </section>
 
       {/* Middle Banner Ad Container */}
-      <AdContainer type="native" slot="inline-content" label="Partenaire Météo" />
+      <section className="my-10">
+        <AdContainer type="native" slot="inline-content" label="Partenaire Météo" />
+      </section>
 
       {/* AI Search Optimization & FAQ Section */}
-      <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
+      <section className="my-8 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
           <div className="p-2.5 bg-orange-500/10 text-orange-400 rounded-xl">
             <HelpCircle className="w-6 h-6" />

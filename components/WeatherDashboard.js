@@ -216,9 +216,9 @@ export default function WeatherDashboard() {
   const isHeatwave = currentTemp !== undefined && currentTemp >= 30;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Search Bar & GPS Auto-Location Header Controls */}
-      <div className="bg-slate-900/90 p-4 md:p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+      <div className="bg-slate-900/90 p-4 md:p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4 mb-8">
         <div className="flex flex-col sm:flex-row items-center gap-3">
           {/* Search Input Box */}
           <div className="relative flex-1 w-full" ref={searchContainerRef}>
@@ -371,7 +371,7 @@ export default function WeatherDashboard() {
 
       {/* Weather Content */}
       {!loading && !error && weatherData && (
-        <div className="space-y-6">
+        <div className="space-y-10">
           {/* Heatwave Canicule Alert Banner */}
           {isHeatwave && (
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-orange-600 p-6 text-white shadow-2xl animate-pulse-glow border border-red-400/40">
