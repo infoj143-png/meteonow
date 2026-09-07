@@ -1,6 +1,5 @@
 import WeatherDashboard from '../components/WeatherDashboard';
-import AdContainer from '../components/AdContainer';
-import { HelpCircle, Sparkles, AlertCircle, SunMedium } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 export default function Home() {
   const faqList = [
@@ -45,16 +44,6 @@ export default function Home() {
       {/* Weather Dashboard Component */}
       <section className="my-8">
         <WeatherDashboard />
-      </section>
-
-      {/* Adsterra Native Banner in sponsored box below search/weather section */}
-      <section className="my-8">
-        <AdContainer type="native" slot="weather-bottom" label="Publicité Météo" />
-      </section>
-
-      {/* Clean Monetag Banner between weather forecast and FAQ section */}
-      <section className="my-8">
-        <AdContainer type="monetag" slot="inline-monetag" label="Partenaire Météo" />
       </section>
 
       {/* AI Search Optimization & FAQ Section */}

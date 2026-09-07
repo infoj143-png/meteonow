@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import AdContainer from './AdContainer';
 import {
   Sun,
   Cloud,
@@ -558,6 +559,11 @@ export default function WeatherDashboard() {
             </div>
           </div>
 
+          {/* Adsterra Native Banner right after 7-day forecast */}
+          <section className="my-8">
+            <AdContainer type="native" slot="weather-bottom" label="Publicité Météo" />
+          </section>
+
           {/* Extreme Weather / Heatwave Health Recommendations Section */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -593,6 +599,11 @@ export default function WeatherDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Monetag Inline Banner between heatwave safety tips and FAQ section */}
+          <section className="my-8">
+            <AdContainer type="monetag" slot="inline-monetag" label="Partenaire Météo" />
+          </section>
         </div>
       )}
     </div>
