@@ -43,13 +43,13 @@ export default function Home() {
       />
 
       {/* Top Banner Ad Container */}
-      <AdContainer slot="header-banner" label="Publicité Météo" />
+      <AdContainer type="native" slot="header-banner" label="Publicité Météo" />
 
       {/* Weather Dashboard Component */}
       <WeatherDashboard />
 
       {/* Middle Banner Ad Container */}
-      <AdContainer slot="inline-content" label="Partenaire Météo" />
+      <AdContainer type="native" slot="inline-content" label="Partenaire Météo" />
 
       {/* AI Search Optimization & FAQ Section */}
       <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
